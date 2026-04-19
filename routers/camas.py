@@ -1,9 +1,12 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import get_db
+from routers.analytics import generar_historico_bi
 from services.data_processor import procesar_reporte_camas
 from models import OcupacionCamas
+from sqlalchemy import or_, and_, extract
 
 router = APIRouter(
     prefix="/api/camas",
@@ -58,3 +61,30 @@ def eliminar_reporte_camas(archivo_origen: str, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/historico-bi")
+def obtener_historico_bi(
+    year: int = Query(..., description="Año de análisis"),
+    agrupacion: str = Query("mensual", description="Tipo de agrupación: diario, semanal, mensual..."),
+    db: Session = Depends(get_db)
+):
+    try:
+        start_date = date(year - 1, 1, 1)
+        end_date = date(year, 12, 31)
+        registros = db.query(OcupacionCamas).filter(
+            OcupacionCamas.fecha_foto.between(start_date, end_date)
+        ).all()
+
+        if not registros:
+            return {
+                "status": "success", 
+                "data": {"current_year": [], "previous_year": []}
+            }
+
+        datos_procesados = generar_historico_bi(registros, year, agrupacion)
+
+        return {"status": "success", "data": datos_procesados}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en motor BI: {str(e)}")
