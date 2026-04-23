@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.requests import Request
 from database import engine, Base, BASE_PATH
-from routers import camas, sync
+from routers import camas, sync, urgencias
 
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
@@ -38,6 +38,7 @@ app.add_middleware(
 
 app.include_router(sync.router) 
 app.include_router(camas.router)
+app.include_router(urgencias.router)
 
 def obtener_ruta_frontend():
     if getattr(sys, 'frozen', False):

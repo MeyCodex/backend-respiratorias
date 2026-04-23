@@ -17,14 +17,14 @@ async def sincronizar_archivo(file: UploadFile = File(...), db: Session = Depend
         if "CAMA" in filename or "OCUPACION" in filename:
             resultado = processor.procesar_reporte_camas(db, contents, file.filename)
         
-        elif "URGENCIA" in filename:
-            raise HTTPException(status_code=501, detail="Procesador de Urgencias aún no implementado.")
+        elif "URGENCIA" in filename or "DX" in filename:
+            resultado = processor.procesar_reporte_urgencia(db, contents, file.filename)
             
         elif any(k in filename for k in ["MONITOREO", "DIARIA", "AGENDA"]):
             raise HTTPException(status_code=501, detail="Procesador de APS aún no implementado.")
             
         else:
-            raise ValueError(f"No se reconoce el tipo de archivo: {file.filename}")
+            raise ValueError(f"No se reconoce el tipo de archivo: {file.filename}. Debe incluir 'CAMAS' o 'URGENCIA' en el nombre.")
 
         return {"status": "success", "data": resultado}
 
